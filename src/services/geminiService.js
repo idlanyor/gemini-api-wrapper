@@ -191,7 +191,7 @@ export class GeminiService {
     }
 
     /**
-     * Generate image using streaming response
+     * Generate image using non-streaming response
      * @param {ImageRequest} request - Image generation request parameters
      * @returns {Promise<Object>} Image response with base64 data and text
      */
@@ -217,7 +217,8 @@ export class GeminiService {
                 },
             ];
 
-            const response = await this.ai.models.generateContentStream({
+            // Use non-streaming response
+            const response = await this.ai.models.generateContent({
                 model,
                 config,
                 contents,
@@ -226,22 +227,22 @@ export class GeminiService {
             const images = [];
             let textResponse = '';
 
-            for await (const chunk of response) {
-                if (!chunk.candidates || !chunk.candidates[0].content || !chunk.candidates[0].content.parts) {
-                    continue;
-                }
+            // Handle response parts
+            if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
+                const parts = response.candidates[0].content.parts;
 
-                // Handle image data
-                if (chunk.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
-                    const inlineData = chunk.candidates[0].content.parts[0].inlineData;
-                    images.push({
-                        data: inlineData.data,
-                        mimeType: inlineData.mimeType
-                    });
-                }
-                // Handle text response
-                else if (chunk.text) {
-                    textResponse += chunk.text;
+                for (const part of parts) {
+                    // Handle image data
+                    if (part.inlineData) {
+                        images.push({
+                            data: part.inlineData.data,
+                            mimeType: part.inlineData.mimeType
+                        });
+                    }
+                    // Handle text response
+                    else if (part.text) {
+                        textResponse += part.text;
+                    }
                 }
             }
 
@@ -354,75 +355,7 @@ export class GeminiService {
         }
     }
 
-    /**
-     * Generate image without streaming and save to file
-     * @param {ImageRequest} request - Image generation request parameters
-     * @returns {Promise<Object>} Image response with file URLs and text
-     */
-    async generateImage(request) {
-        try {
-            const { model = 'gemini-2.5-flash-image-preview', prompt } = request;
-
-            const config = {
-                responseModalities: [
-                    'IMAGE',
-                    'TEXT',
-                ],
-            };
-
-            const contents = [
-                {
-                    role: 'user',
-                    parts: [
-                        {
-                            text: prompt,
-                        },
-                    ],
-                },
-            ];
-
-
-
-            // Use non-streaming response
-            const response = await this.ai.models.generateContent({
-                model,
-                config,
-                contents,
-            });
-
-            const images = [];
-            let textResponse = '';
-
-            // Handle response parts
-            if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
-                const parts = response.candidates[0].content.parts;
-
-                for (const part of parts) {
-                    // Handle image data
-                    if (part.inlineData) {
-                        // Save image to file and get URL
-                        const imageUrl = await this.saveImageToFile(part.inlineData.data, part.inlineData.mimeType);
-                        images.push({
-                            url: imageUrl,
-                            mimeType: part.inlineData.mimeType
-                        });
-                    }
-                    // Handle text response
-                    else if (part.text) {
-                        textResponse += part.text;
-                    }
-                }
-            }
-
-            return {
-                images: images,
-                text: textResponse,
-                totalImages: images.length
-            };
-        } catch (error) {
-            throw new Error(`Image generation failed: ${error.message}`);
-        }
-    }
+    // The generateImage method has been updated to use non-streaming response above
     /**
    * Generate figurine image from input image (returns buffer)
    * @param {Object} request - To figure request parameters

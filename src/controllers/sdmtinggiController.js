@@ -35,8 +35,8 @@ export const sdmtinggiController = new Elysia({ prefix: "/sdmtinggi" })
     }, {
         body: t.Object({
             image: t.File({
-                description: "Input image to convert to grayscale with censor bar and red background",
-                type: "string",
+                description: "Input image to convert to figurine",
+                type: 'image',
                 format: "binary"
             })
         }),

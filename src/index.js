@@ -7,8 +7,14 @@ import { figurineController } from "./controllers/figurineController.js";
 import { config } from "./config.js";
 import { hijabController } from './controllers/hijabController.js';
 import { sdmtinggiController } from './controllers/sdmtinggiController.js';
+import cors from "@elysiajs/cors";
 
 const app = new Elysia()
+  .use(cors({
+    origin: ["*", "https://cihuy.antidonasi.web.id"],
+    methods: ["GET", "POST"],
+    headers: ["*"]
+  }))
   .use(swagger({
     path: "/docs",
     documentation: {

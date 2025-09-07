@@ -9,19 +9,19 @@ export const hijabController = new Elysia({ prefix: "/hijabkan" })
       const result = await geminiService.generateHijab({
         image: body.image
       });
-      
+
       // Return first image as buffer if available
       if (result.images && result.images.length > 0) {
         const firstImage = result.images[0];
-        
+
         // Set response headers for image
         set.headers['Content-Type'] = firstImage.mimeType;
         set.headers['Content-Disposition'] = 'attachment; filename="hijab.png"';
-        
+
         // Return buffer directly
         return firstImage.buffer;
       }
-      
+
       return {
         success: false,
         error: "No image generated"
@@ -35,8 +35,8 @@ export const hijabController = new Elysia({ prefix: "/hijabkan" })
   }, {
     body: t.Object({
       image: t.File({
-        description: "Input image to convert to hijab",
-        type: "string",
+        description: "Input image to convert to figurine",
+        type: 'image',
         format: "binary"
       })
     }),
@@ -54,23 +54,23 @@ export const hijabController = new Elysia({ prefix: "/hijabkan" })
           error: "imageUrl parameter is required"
         };
       }
-      
+
       const result = await geminiService.generateHijab({
         image: query.imageUrl
       });
-      
+
       // Return first image as buffer if available
       if (result.images && result.images.length > 0) {
         const firstImage = result.images[0];
-        
+
         // Set response headers for image
         set.headers['Content-Type'] = firstImage.mimeType;
         set.headers['Content-Disposition'] = 'attachment; filename="hijab.png"';
-        
+
         // Return buffer directly
         return firstImage.buffer;
       }
-      
+
       return {
         success: false,
         error: "No image generated"

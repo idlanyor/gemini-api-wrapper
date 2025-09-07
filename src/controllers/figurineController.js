@@ -36,7 +36,7 @@ export const figurineController = new Elysia({ prefix: "/figurine" })
     body: t.Object({
       image: t.File({
         description: "Input image to convert to figurine",
-        type: "string",
+        type: 'image',
         format: "binary"
       })
     }),

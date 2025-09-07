@@ -5,11 +5,28 @@ const geminiService = new GeminiService();
 
 export const imageController = new Elysia({ prefix: "/image" })
   // Existing POST method
-  .post("/generate", 
+  .post("/generate",
     async ({ body, set }) => {
       try {
         const response = await geminiService.generateImage(body);
-        return { success: true, data: response };
+
+        // Return first image as buffer if available
+        if (response.images && response.images.length > 0) {
+          const firstImage = response.images[0];
+
+          // Set response headers for image
+          set.headers['Content-Type'] = firstImage.mimeType;
+          set.headers['Content-Disposition'] = 'attachment; filename="generated.png"';
+
+          // Convert base64 to buffer and return directly
+          const buffer = Buffer.from(firstImage.data, 'base64');
+          return buffer;
+        }
+
+        return {
+          success: false,
+          error: "No image generated"
+        };
       } catch (error) {
         set.status = 500;
         return { success: false, error: error.message };
@@ -17,8 +34,11 @@ export const imageController = new Elysia({ prefix: "/image" })
     },
     {
       body: t.Object({
-        model: t.Optional(t.String()),
-        prompt: t.String(),
+        image: t.File({
+          description: "Input image to convert to figurine",
+          type: 'image',
+          format: "binary"
+        })
       }),
       detail: {
         tags: ["image"],
@@ -28,11 +48,28 @@ export const imageController = new Elysia({ prefix: "/image" })
     }
   )
   // New GET method
-  .get("/generate", 
+  .get("/generate",
     async ({ query, set }) => {
       try {
         const response = await geminiService.generateImage(query);
-        return { success: true, data: response };
+
+        // Return first image as buffer if available
+        if (response.images && response.images.length > 0) {
+          const firstImage = response.images[0];
+
+          // Set response headers for image
+          set.headers['Content-Type'] = firstImage.mimeType;
+          set.headers['Content-Disposition'] = 'attachment; filename="generated.png"';
+
+          // Convert base64 to buffer and return directly
+          const buffer = Buffer.from(firstImage.data, 'base64');
+          return buffer;
+        }
+
+        return {
+          success: false,
+          error: "No image generated"
+        };
       } catch (error) {
         set.status = 500;
         return { success: false, error: error.message };
@@ -42,6 +79,9 @@ export const imageController = new Elysia({ prefix: "/image" })
       query: t.Object({
         model: t.Optional(t.String()),
         prompt: t.String(),
+        imageUrl: t.Optional(t.String({
+          description: "URL of input image for image generation"
+        })),
       }),
       detail: {
         tags: ["image"],
