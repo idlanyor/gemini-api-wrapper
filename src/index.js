@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { swagger } from "@elysiajs/swagger";
+import cors from "@elysiajs/cors";
 import { staticPlugin } from "@elysiajs/static";
 import { chatController } from "./controllers/chatController.js";
 import { imageController } from "./controllers/imageController.js";
@@ -7,9 +8,9 @@ import { figurineController } from "./controllers/figurineController.js";
 import { config } from "./config.js";
 import { hijabController } from './controllers/hijabController.js';
 import { sdmtinggiController } from './controllers/sdmtinggiController.js';
-import cors from "@elysiajs/cors";
+import { hitamController } from "./controllers/hitamController.js";
 
-const app = new Elysia()
+new Elysia()
   .use(cors({
     origin: ["*", "https://cihuy.antidonasi.web.id"],
     methods: ["GET", "POST"],
@@ -28,8 +29,8 @@ const app = new Elysia()
         { name: "image", description: "Image generation endpoints" },
         { name: "figurine", description: "Figurine generation endpoints" },
         { name: "hijab", description: "Hijab generation endpoints" },
-        { name: "sdmtinggi", description: "Sdmtinggi generation endpoints" }
-
+        { name: "sdmtinggi", description: "Sdmtinggi generation endpoints" },
+        { name: "hitamkan", description: "Hitamkan endpoints" }
       ]
     }
   }))
@@ -46,7 +47,8 @@ const app = new Elysia()
           post: "/chat - Generate chat response",
           get: "/chat?message=hello - Generate chat response via GET",
           upload: "/chat/upload - Generate chat response with file",
-          withFile: "/chat/with-file?message=hello&fileUrl=url - Chat with file URL"
+          withFile: "/chat/with-file?message=hello&fileUrl=url - Chat with file URL",
+          image: "/chat/image - Generate image from prompt (non-streaming)"
         },
         image: {
           post: "/image/generate - Generate image from prompt",
@@ -63,6 +65,10 @@ const app = new Elysia()
         sdmtinggi: {
           post: "/sdmtinggi - Generate sdmtinggi from uploaded image",
           get: "/sdmtinggi?imageUrl=url - Generate sdmtinggi from image URL"
+        },
+        hitamkan: {
+          post: "/hitamkan - Generate hitam from uploaded image",
+          get: "/hitamkan?imageUrl=url - Generate hitam from image URL"
         }
 
 
@@ -75,6 +81,7 @@ const app = new Elysia()
   .use(figurineController)
   .use(hijabController)
   .use(sdmtinggiController)
+  .use(hitamController)
 
   .listen(config.port);
 

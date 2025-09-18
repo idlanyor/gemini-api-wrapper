@@ -22,7 +22,7 @@ import path from 'path';
 
 export class GeminiService {
     constructor() {
-        this.ai = new GoogleGenAI({ apiKey: config.apiKey });
+        this.ai = new GoogleGenAI({ apiKey: 'AIzaSyDtTbbbVViWNun2kA6TM6kCKWbPa2xUgH8' });
         this.sessions = new Map();
 
         // Create images directory if it doesn't exist
@@ -538,6 +538,117 @@ export class GeminiService {
       const { image, model = 'gemini-2.5-flash-image-preview' } = request;
       
       const SDMTINGGI_PROMPT = 'Edit the uploaded image by keeping the exact same character and anything they are holding without changing their pose, position, or appearance, convert only the character and held objects into grayscale with all visual details preserved (not fully white), add a clean solid black rectangular censor bar that precisely follows the orientation of the character\'s eyes and covers only the eyes, remove the entire original background completely and replace it with a flat solid pure red color (#FF0000), and make sure no parts of the character or the items they are holding are removed or replaced.';
+      
+      const config = {
+        responseModalities: [
+          'IMAGE',
+          'TEXT',
+        ],
+      };
+      
+      // Prepare image data
+      let imageData, mimeType;
+      
+      if (typeof image === 'string') {
+        // Image is a URL
+        const urlImageData = await this.fetchFileFromUrl(image);
+        imageData = urlImageData.data;
+        mimeType = urlImageData.mimeType;
+      } else {
+        // Image is a File object
+        const arrayBuffer = await image.arrayBuffer();
+        imageData = Buffer.from(arrayBuffer).toString('base64');
+        mimeType = image.type;
+      }
+      
+      const contents = [
+        {
+          role: 'user',
+          parts: [
+            { text: SDMTINGGI_PROMPT },
+            {
+              inlineData: {
+                mimeType: mimeType,
+                data: imageData
+              }
+            }
+          ],
+        },
+      ];
+
+      // Use non-streaming response
+      const response = await this.ai.models.generateContent({
+        model,
+        config,
+        contents,
+      });
+      
+      const images = [];
+      let textResponse = '';
+      
+      // Handle response parts
+      if (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts) {
+        const parts = response.candidates[0].content.parts;
+        
+        for (const part of parts) {
+          // Handle image data - return as buffer instead of saving to file
+          if (part.inlineData) {
+            const buffer = Buffer.from(part.inlineData.data, 'base64');
+            images.push({
+              buffer: buffer,
+              mimeType: part.inlineData.mimeType,
+              data: part.inlineData.data // Keep base64 data for flexibility
+            });
+          }
+          // Handle text response
+          else if (part.text) {
+            textResponse += part.text;
+          }
+        }
+      }
+      
+      return {
+        images: images,
+        text: textResponse,
+        totalImages: images.length,
+        type: 'sdmtinggi'
+      };
+    } catch (error) {
+      throw new Error(`SdmTinggi generation failed: ${error.message}`);
+    }
+  }
+  async generateHitam(request) {
+    try {
+      const { image, model = 'gemini-2.5-flash-image-preview' } = request;
+      
+      const SDMTINGGI_PROMPT = `TASK :
+Change only the subject’s visible skin tone to a natural black.
+
+SCOPE :
+- Apply strictly to visible skin areas (face, ears, neck, hands, arms, legs, etc.).
+- Preserve skin texture (pores, fine lines, freckles, moles) and realistic detail.
+
+DO NOT CHANGE :
+- Pose, position, framing/composition, perspective, body proportions, or facial expression.
+- Background, clothing, accessories, hair, makeup, lip/teeth/eye colors.
+- No cropping, resizing, rotating, or adding/removing any element.
+
+QUALITY & REALISM :
+- Produce a natural black tone consistent with the original lighting (respect shadows/highlights).
+- Maintain dynamic range, contrast, and sharpness; avoid oversaturation or color cast on non-skin areas.
+- Ensure uniform, seamless color across all skin regions; avoid color bleeding beyond skin edges.
+
+OPTIONAL COLOR GUIDANCE :
+- Medium warm black (e.g., hex ~#8D6E63)
+- Neutral medium black (e.g., hex ~#7B5E57)
+- Deep warm black (e.g., hex ~#5D4037)
+Adjust saturation/brightness to match the scene lighting realistically.
+
+OUTPUT :
+- Keep original resolution and aspect ratio; export high quality (JPG/PNG) with no extra artifacts.
+
+MULTI-PERSON NOTE :
+- Edit only the selected/main subject; leave others unchanged.`;
       
       const config = {
         responseModalities: [
